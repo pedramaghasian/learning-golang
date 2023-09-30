@@ -868,7 +868,57 @@ aSlice = aSlice[:len(aSlice)-1]
 #### How slices are connected to arrays
 
 - **behind the scenes, each slice is implemented using an underlying array. The length of the underlying array is the same as the capacity of the slice and there exist pointers that connect the slice elements to the appropriate array elements.**
+- when the capacity of the slice changes, the connection to the array ceases to exist! This happens because when the capacity of a slice changes, so does the underlying array, and the connection between the slice and the original array does not exist anymore.
 
+#### The copy() function
+- `func copy(dst, src []Type) int`.
+- The copy() function in Go is used to copy data from one array or slice to another.
+- Destination Slice Size: When using copy(), you need to specify the destination slice and the source data to copy. If the source slice is larger than the destination slice, only as much data as the destination can hold will be copied. The remaining data in the source will not be copied.
+- Source Slice Remains Unchanged: The source slice remains unchanged after the copy operation. Only the destination slice gets modified.
+- No Automatic Resizing: If the destination slice is smaller than the source slice, the copy() function will not automatically expand the destination slice. It will only copy as much data as the destination can hold.
+
+<div style="text-align:center">
+  <img src="./images3/3.png" alt="3" width="500"/>
+</div>
+
+#### Sorting slices
+
+- The sort package can sort slices of built-in data types without the need to write any extra code.
+- Go provides the sort.Reverse() function for sorting in the reverse order than the default.
+- However, what is really interesting is that sort allows you to write your own sorting functions for custom data types by implementing the sort.Interface interface.
+
+```go
+package main
+
+import (
+	"fmt"
+	"sort"
+)
+
+func main() {
+	sInts := []int{1, 0, 2, -3, 4, -20}
+	sFloats := []float64{1.0, 0.2, 0.22, -3, 4.1, -0.1}
+	sStrings := []string{"aa", "a", "A", "Aa", "aab", "AAa"}
+
+	fmt.Println("sInts original:", sInts)
+	sort.Ints(sInts)
+	fmt.Println("sInts:", sInts)
+	sort.Sort(sort.Reverse(sort.IntSlice(sInts)))
+	fmt.Println("Reverse:", sInts)
+
+	fmt.Println("sFloats original:", sFloats)
+	sort.Float64s(sFloats)
+	fmt.Println("sFloats:", sFloats)
+	sort.Sort(sort.Reverse(sort.Float64Slice(sFloats)))
+	fmt.Println("Reverse:", sFloats)
+
+	fmt.Println("sStrings original:", sStrings)
+	sort.Strings(sStrings)
+	fmt.Println("sStrings:", sStrings)
+	sort.Sort(sort.Reverse(sort.StringSlice(sStrings)))
+	fmt.Println("Reverse:", sStrings)
+}
+```
 ### Pointers
 
 ### Generating random numbers
