@@ -1060,11 +1060,199 @@ func main() {
 
 ## Chapter 3: Composite Data Types
 
+- Go offers support for maps and structures, which are composite data types and the main subject of this chapter. The reason that we present them separately from arrays and slices is that both maps and structures are more flexible and powerful than arrays and slices.
+- Maps can use keys of different data types whereas structures can group multiple data types and create new ones.
+
+
 ### Maps
+- Both arrays and slices limit you to using positive integers as indexes.
+- Maps are powerful data structures because they allow you to use indexes of various data types as keys to look up your data as long as these keys are comparable.
+- should use a map when you are going to need indexes that are not positive integer numbers or when the integer indexes have big gaps.
+- avoid using floating point values as keys to Go maps.
+- working with maps in Go is fast, as you can access all elements of a map in linear time. Inserting and retrieving elements from a map is fast and does not depend on the cardinality of the map.
+
+```go
+
+// create map using  make() 
+m = make(map[string]int)
+
+
+// map literal
+// The map literal version is faster when you want to add data to a map at the time of creation.
+
+m := map[string]int{ 
+	"key1": -1
+	"key2": 123
+}
+
+// length of map
+len(m) 
+
+// delete a key
+delete(m,"key1")
+
+// a key k exists on a map 
+value, ok := m["key2"]
+```
+- **If you try to get the value of a key that does not exist in a map, Go will not complain about it and returns the zero value of the data type of the value.**
+
+#### Storing to a nil map
+- You are allowed to assign a map variable to nil. In that case, you will not be able to use that variable until you assign it to a new map variable. Put simply, if you try to store data on a nil map, your program will crash.
+
+```go
+aMap := map[string]int{}
+	aMap = nil 
+	aMap["test"] = 1 // this is give error : panic: assignment to entry in nil map
+	fmt.Println(aMap)
+```
+
+- Testing whether a map points to nil before using it is a good practice.
+
+```go
+
+aMap := map[string]int{}
+aMap = nil 
+
+if aMap == nil {
+fmt.Println("nil map!")
+aMap = map[string]int{}
+}
+```
+
+- **In real-world applications, if a function accepts a map argument, then it should check that the map is not nil before working with it.**
+
+#### Iterating over maps
+
+- in Go do not guarantee a particular order for iteration because they are implemented as hash tables, which are designed for fast key-value lookup, not necessarily for maintaining order.
+
+```go
+aMap := make(map[string]string)
+aMap["123"] = "456"
+aMap["key"] = "A value"
+
+// range works with maps as well
+for key, v := range aMap {
+fmt.Println("key:", key, "value:", v)
+}
+```
 
 ### Structures
 
+- used for organizing and grouping various types of data under the same name. 
+
+1. define a struct in local scop :
+
+```go
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    // Define a struct within the main() function
+    type LocalPerson struct {
+        Name string
+        Age  int
+    }
+
+    // Create a LocalPerson struct variable
+    person := LocalPerson{Name: "Bob", Age: 25}
+
+    // Access and print the values
+    fmt.Printf("Name: %s, Age: %d\n", person.Name, person.Age)
+}
+```
+2. define a struct in Global scope:
+
+```go
+
+package main
+
+import (
+    "fmt"
+)
+
+// Define a struct outside of any function
+type Person struct {
+    Name string
+    Age  int
+}
+
+func main() {
+    // Create a Person struct variable
+    person := Person{Name: "Alice", Age: 30}
+
+    // Access and print the values
+    fmt.Printf("Name: %s, Age: %d\n", person.Name, person.Age)
+}
+```
+
+#### Defining new 
+
+- When you define a new structure, you group a set of values into a single data type, which allows you to pass and receive this set of values as a single entity.
+
+```go
+type Entry struct {
+Name string
+Surname string
+Year int
+}
+
+// Initialized by Go
+// If no initial value is given to a variable, the Go compiler automatically initializes that variable to the zero value of its data type
+p1 := Entry{}
+
+// Initialized by the user
+// Creating a regular structure variable
+p1 := Entry{"pedram","pedram", -2}
+
+ // Creating a pointer to a structure
+p2 := &Entry{"pedram","pedram", -2}
+
+```
+- The `type` keyword allows you to define new data types or create aliases for existing ones.
+-  you can work with structures in Go as regular variables or as pointers, create them using functions, but remember that the order of fields in a structure type definition is essential for type identity. Structures with the same fields in different orders are considered distinct types in Go.
+
+#### Using the new keyword
+
+```go
+ pS := new(Entry)
+```
+- It allocates the proper memory space, which depends on the data type, and then it zeroes it.
+- It always returns a pointer to the allocated memory.
+- It works for all data types except channel and map
+
+#### Slices of structures
+
+- You can create slices of structures in order to group and handle multiple structures under a single variable name.s
 ### Regular expressions and pattern matching
 
+```go
+func matchNameSur(s string) bool {
+t := []byte(s)
+re := regexp.MustCompile(`^[A-Z][a-z]*$`)
+return re.Match(t)
+}
+```
+#### Working with CSV files
+- The `encoding/csv` package contains functions that can help you read and write CSV files.
+
+1. for small csv file : `csv.NewReader(f).ReadAll()`.
+2. for big csv file : `csv.NewReader(f).Read() `
+3. Go assumes that the CSV file uses the comma character (,).
 ## Chapter 4: Reflection and Interfaces
+
+### Reflection
+
+### Type methods
+
+### Interfaces
+
+### Working with two different CSV file formats
+
+### OOP in Go
+
+## Chapter 5: Go Packages and Functions
+
 103 (124 / 683)
