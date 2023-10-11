@@ -1337,10 +1337,152 @@ func main() {
 ```
 #### Learning the internal structure of a Go structure
 
+```go
+package main
+
+import (
+	"fmt"
+	"reflect"
+)
+
+type Secret struct {
+	Username string
+	Password string
+}
+
+type Record struct {
+	Field1 string
+	Field2 float64
+	Field3 Secret
+}
+
+func main() {
+	A := Record{"String value", -12.123, Secret{"Mihalis", "Tsoukalos"}}
+
+	r := reflect.ValueOf(A)
+	fmt.Println("String value:", r.String())
+
+	iType := r.Type()
+	fmt.Printf("i Type: %s\n", iType)
+	fmt.Printf("The %d fields of %s are\n", r.NumField(), iType)
+
+	for i := 0; i < r.NumField(); i++ {
+		fmt.Printf("\t%s ", iType.Field(i).Name)
+		fmt.Printf("\twith type: %s ", r.Field(i).Type())
+		fmt.Printf("\tand value _%v_\n", r.Field(i).Interface())
+
+		// Check whether there are other structures embedded in Record
+		k := reflect.TypeOf(r.Field(i).Interface()).Kind()
+		// Need to convert it to string in order to compare it
+		if k.String() == "struct" {
+			fmt.Println(r.Field(i).Type())
+		}
+
+		// Same as before but using the internal value
+		if k == reflect.Struct {
+			fmt.Println(r.Field(i).Type())
+		}
+	}
+}
+```
+#### Changing structure values using reflection
+
+```go
+package main
+
+import (
+	"fmt"
+	"reflect"
+)
+
+type T struct {
+	F1 int
+	F2 string
+	F3 float64
+}
+
+func main() {
+	A := T{1, "F2", 3.0}
+	fmt.Println("A:", A)
+
+	r := reflect.ValueOf(&A).Elem()
+	fmt.Println("String value:", r.String())
+	typeOfA := r.Type()
+	for i := 0; i < r.NumField(); i++ {
+		f := r.Field(i)
+		tOfA := typeOfA.Field(i).Name
+		fmt.Printf("%d: %s %s = %v\n", i, tOfA, f.Type(), f.Interface())
+
+		k := reflect.TypeOf(r.Field(i).Interface()).Kind()
+		if k == reflect.Int {
+			r.Field(i).SetInt(-100)
+		} else if k == reflect.String {
+			r.Field(i).SetString("Changed!")
+		}
+	}
+
+	fmt.Println("A:", A)
+}
+```
+
+#### The three disadvantages of reflection
+
+1. The first reason is that extensive use of reflection will make your programs hard to read and maintain.
+2. The second reason is that the Go code that uses reflection makes your programs slower.
+3. The last reason is that reflection errors cannot be caught at build time and are reported at runtime as panics, which means that reflection errors can potentially crash your programs. 
+
 ### Type methods
+- A type method is a function that is attached to a specific data type. Although type methods (or methods on types) are in reality functions, they are defined and used in a slightly different way.
+- **You are not obligated to develop type methods if you do not want to. In fact, each type method can be rewritten as a regular function.**
+  
+```go
+type MyType struct{}
+
+func (a MyType) FunctionName(parameters) <return values> {
+...
+}
+
+func FunctionName(a MyType, parameters...) <return values> {
+...
+}
+```
+- Have in mind that under the hood, the Go compiler does turn methods into regular function calls with the self value as the first parameter.
+
+**selector**
+```go
+// Create a 'Person' instance
+    person := Person{
+        Name: "Alice",
+        Age: 30,
+    }
+
+    // Using a selector to access a field
+    fmt.Println("Name:", person.Name)
+```
+
+#### Using type methods
+
+- **If you are defining type methods for a structure, you should make sure that the names of the type methods do not conflict with any field name of the structure because the Go compiler will reject such ambiguities.**
 
 ### Interfaces
 
+-  Interfaces in Go are like contracts. They define a set of methods that a type must implement in order to be considered as implementing that interface. An interface specifies what a type can do, without worrying about its specific details.
+
+- An interface is a Go mechanism for defining behavior that is implemented using a set of methods.
+- interfaces play a key role in Go and can simplify the code of your programs when they have to deal with multiple data types that perform the same task—recall that fmt.Println() works for almost all data types.
+-  But remember, interfaces should not be unnecessarily complex. If you decide to create your own interfaces, then you should begin with a common behavior that you want to be used by multiple data types.
+-  Interfaces work with methods on types (or type methods), which are like functions attached to given data types.
+-  **The empty interface is defined as just `interface{}`. As the empty interface has no methods, it means that it is already implemented by all data types.**
+-  an interface is two things: **a set of methods and a type.** Have in mind that small and well-defined interfaces are usually the most popular ones.
+-  The biggest advantage you get from interfaces is that if needed, you can pass a variable of a data type that implements a particular interface to any function that expects a parameter of that specific interface, which saves you from having to write separate functions for each supported data type. However, Go offers an alternative to this with the recent addition of generics.
+-  Interfaces can also be used for providing a kind of **polymorphism** in Go.
+-  interfaces can be used for **composition**. In practice, this means that you can combine existing interfaces and create new ones. 
+
+<div style="text-align:center">
+  <img src="./images3/4.png" alt="4" width="500"/>
+</div>
+
+#### The sort.Interface interface 
 ### Working with two different CSV file formats
 
 ### OOP in Go
