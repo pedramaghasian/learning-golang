@@ -1483,6 +1483,138 @@ func FunctionName(a MyType, parameters...) <return values> {
 </div>
 
 #### The sort.Interface interface 
+
+- The sort package contains an interface named `sort.Interface` that allows you to sort slices according to your needs and your data, provided that you implement `sort.Interface` for the custom data types stored in your slices.
+
+```go
+package main
+
+import (
+    "fmt"
+    "sort"
+)
+
+// Define a custom type for sorting
+type MyIntSlice []int
+
+// Implement the Len, Less, and Swap methods for MyIntSlice
+func (s MyIntSlice) Len() int {
+    return len(s)
+}
+
+func (s MyIntSlice) Less(i, j int) bool {
+    return s[i] < s[j]
+}
+
+func (s MyIntSlice) Swap(i, j int) {
+    s[i], s[j] = s[j], s[i]
+}
+
+func main() {
+    data := MyIntSlice{5, 2, 9, 1, 5}
+
+    fmt.Println("Unsorted:", data)
+
+    // Use the sort package to sort the slice using the sort.Interface
+    sort.Sort(data)
+
+    fmt.Println("Sorted:", data)
+}
+```
+
+#### The empty interface `interface{}`
+
+- the **empty interface** is defined as just `interface{}` and is already implemented by all data types.
+- if you intend to work with `interface{}` function parameters without examining their data type inside the function, you should process them with statements that work on all data types, otherwise your code may crash or misbehave.
+  
+#### Type assertions and type switches
+
+- Type assertion in Go is a mechanism used to access the underlying concrete value of an interface. It allows you to extract the actual data type from an interface that is stored inside an empty interface `interface{}`.
+
+1. **Type Assertion:**
+
+```go
+// Basic Type Assertion:
+
+var i interface{} = 42
+j := i.(int) // type assertion to extract an integer
+fmt.Println(j) // Output: 42
+
+
+// Sate Type Assertion:
+
+var i interface{} = "Hello"
+j, ok := i.(int)
+if ok {
+    fmt.Println("Type assertion successful:", j)
+} else {
+    fmt.Println("Type assertion failed")
+}
+```
+
+2. **Type Switch:**
+
+- A type switch allows you to check the type of an interface against multiple types and execute code based on the type.
+
+```go
+func checkType(i interface{}) {
+    switch v := i.(type) {
+    case int:
+        fmt.Println("It's an integer:", v)
+    case string:
+        fmt.Println("It's a string:", v)
+    default:
+        fmt.Println("Unknown type")
+    }
+}
+
+checkType(42)         // Output: It's an integer: 42
+checkType("Hello")   // Output: It's a string: Hello
+checkType(3.14)      // Output: Unknown type
+```
+
+#### The `map[string]interface{}` map
+
+- that the biggest advantage you get from using a `map[string]interface{}` map or any map that stores an `interface{}` value in general, is that you still have your data in its **original state** and data type.
+- If you use `map[string]string` instead, or anything similar, then any data you have is going to be converted into a string, which means that you are going to **lose information about the original data type** and the structure of the data you are storing in the map.
+- `map[string]interface{}` is extremely handy for storing JSON records when you do not know their schema in advance. In other words, `map[string]interface{}` is good at storing arbitrary JSON data of unknown schema.
+
+```go
+func typeSwitch(m map[string]interface{}) {
+	for k, v := range m {
+		switch c := v.(type) {
+		case string:
+			fmt.Println("Is a string!", k, c)
+		case float64:
+			fmt.Println("Is a float64!", k, c)
+		case bool:
+			fmt.Println("Is a Boolean!", k, c)
+		case map[string]interface{}:
+			fmt.Println("Is a map!", k, c)
+			typeSwitch(v.(map[string]interface{}))
+		default:
+			fmt.Printf("...Is %v: %T!\n", k, c)
+		}
+	}
+	return
+}
+
+func exploreMap(m map[string]interface{}) {
+	for k, v := range m {
+		embMap, ok := v.(map[string]interface{})
+		// If it is a map, explore deeper
+		if ok {
+			fmt.Printf("{\"%v\": \n", k)
+			exploreMap(embMap)
+			fmt.Printf("}\n")
+		} else {
+			fmt.Printf("%v: %v\n", k, v)
+		}
+	}
+}
+```
+
+#### The error data type
 ### Working with two different CSV file formats
 
 ### OOP in Go
