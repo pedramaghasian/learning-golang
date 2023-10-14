@@ -821,6 +821,8 @@ func main() {
 ```
 
 #### Byte slices
+- **In Go, a byte is an alias for the uint8 type, and it is used to represent single bytes of data.**
+- **A rune is an alias for the int32 type in Go, and it is used to represent Unicode code points.**
 - There is nothing special in the way you can access a byte slice compared to the other types of slices.
 - What is special is that Go uses byte slices for performing file I/O operations because they allow you to determine with precision the amount of data you want to read or write to a file. This happens because bytes are a universal unit among computer systems.
 - **As Go does not have a char data type, it uses byte and rune for storing character values. A single byte can only store a single ASCII character whereas a rune can store Unicode characters**
