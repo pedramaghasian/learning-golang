@@ -1615,10 +1615,249 @@ func exploreMap(m map[string]interface{}) {
 ```
 
 #### The error data type
+
+- the crucial question is when you should implement the error interface on your own instead of using the default one ? when you want to give more context to an error condition.
+
+```go
+package main
+
+import (
+	"bufio"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+)
+
+type emptyFile struct {
+	Ended bool
+	Read  int
+}
+
+// Implement error interface
+func (e emptyFile) Error() string {
+	return fmt.Sprintf("Ended with io.EOF (%t) but read (%d) bytes", e.Ended, e.Read)
+}
+
+// Check values
+func isFileEmpty(e error) bool {
+	// Type assertion
+	v, ok := e.(emptyFile)
+	if ok {
+		if v.Read == 0 && v.Ended == true {
+			return true
+		}
+	}
+	return false
+}
+
+func readFile(file string) error {
+	var err error
+	fd, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+
+	reader := bufio.NewReader(fd)
+	n := 0
+	for {
+		line, err := reader.ReadString('\n')
+		n += len(line)
+		if err == io.EOF {
+			// End of File: nothing more to read
+			if n == 0 {
+				return emptyFile{true, n}
+			}
+			break
+		} else if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func main() {
+	flag.Parse()
+	if len(flag.Args()) == 0 {
+		fmt.Println("usage: errorInt <file1> [<file2> ...]")
+		return
+	}
+
+	for _, file := range flag.Args() {
+		err := readFile(file)
+		if isFileEmpty(err) {
+			fmt.Println(file, err)
+		} else if err != nil {
+			fmt.Println(file, err)
+		} else {
+			fmt.Println(file, "is OK.")
+		}
+	}
+}
+```
+
+#### Using a Go interface
+
+-  the `interface{}(a).(Shape2D) `notation checks whether the a variable satisfies the `Shape2D` interface without using its underlying value `(circle{R:1.5})`.
+  
+
+```go
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+type Shape2D interface {
+	Perimeter() float64
+}
+
+type circle struct {
+	R float64
+}
+
+func (c circle) Perimeter() float64 {
+	return 2 * math.Pi * c.R
+}
+
+func main() {
+	a := circle{R: 1.5}
+	fmt.Printf("R %.2f -> Perimeter %.3f \n", a.R, a.Perimeter())
+
+	_, ok := interface{}(a).(Shape2D)
+	if ok {
+		fmt.Println("a is a Shape2D!")
+	}
+
+	i := 12
+	_, ok = interface{}(i).(Shape2D)
+	if ok {
+		fmt.Println("i is a Shape2D!")
+	}
+}
+```
+
+#### Implementing sort.Interface 
+
+- we will use a single slice for storing all kinds of structures that all satisfy a given interface. The fact that Go considers **interfaces as data types.**
+
+```go
+package main
+
+import (
+	"fmt"
+	"math"
+	"math/rand"
+	"sort"
+	"time"
+)
+
+const min = 1
+const max = 5
+
+func rF64(min, max float64) float64 {
+	return min + rand.Float64()*(max-min)
+}
+
+// Going to sort the shapes based on their volume
+type Shape3D interface {
+	Vol() float64
+}
+
+type Cube struct {
+	x float64
+}
+
+type Cuboid struct {
+	x float64
+	y float64
+	z float64
+}
+
+type Sphere struct {
+	r float64
+}
+
+func (c Cube) Vol() float64 {
+	return c.x * c.x * c.x
+}
+
+func (c Cuboid) Vol() float64 {
+	return c.x * c.y * c.z
+}
+
+func (c Sphere) Vol() float64 {
+	return 4 / 3 * math.Pi * c.r * c.r * c.r
+}
+
+// Slice of Shape3D
+type shapes []Shape3D
+
+// Implementing sort.Interface
+func (a shapes) Len() int {
+	return len(a)
+}
+
+func (a shapes) Less(i, j int) bool {
+	return a[i].Vol() < a[j].Vol()
+}
+
+func (a shapes) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func PrintShapes(a shapes) {
+	for _, v := range a {
+		// fmt.Printf("%.2f ", v)
+		switch v.(type) {
+		case Cube:
+			fmt.Printf("Cube: volume %.2f\n", v.Vol())
+		case Cuboid:
+			fmt.Printf("Cuboid: volume %.2f\n", v.Vol())
+		case Sphere:
+			fmt.Printf("Sphere: volume %.2f\n", v.Vol())
+		default:
+			fmt.Println("Unknown data type!")
+		}
+	}
+	fmt.Println()
+}
+
+func main() {
+	data := shapes{}
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 3; i++ {
+		cube := Cube{rF64(min, max)}
+		cuboid := Cuboid{rF64(min, max), rF64(min, max), rF64(min, max)}
+		sphere := Sphere{rF64(min, max)}
+
+		data = append(data, cube)
+		data = append(data, cuboid)
+		data = append(data, sphere)
+	}
+	PrintShapes(data)
+
+	// Sorting
+	sort.Sort(shapes(data))
+	PrintShapes(data)
+
+	// Reverse sorting
+	sort.Sort(sort.Reverse(shapes(data)))
+	PrintShapes(data)
+}
+```
 ### Working with two different CSV file formats
 
 ### OOP in Go
 
+- As Go does not support all object-oriented features, it cannot replace an object-oriented programming language fully. However, it can mimic some object-oriented concepts.
+- First of all, a Go structure with its type methods is like an object with its methods. Second, interfaces are like abstract data types that define behaviors and objects of the same class, which is similar to polymorphism. Third, Go supports encapsulation, which means it supports hiding data and functions from the user by making them private to the structure and the current Go package. Lastly, combining interfaces and structures is like composition in object-oriented terminology.
+- If you really want to develop applications using the object-oriented methodology, then choosing Go might not be your best option. As I am not really into Java, I would suggest looking at C++ or Python instead. The general rule here is to choose the best tool for your job.
+   .... here
+
 ## Chapter 5: Go Packages and Functions
 
-103 (124 / 683)
+162 (183 / 683)
