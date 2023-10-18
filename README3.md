@@ -1481,7 +1481,7 @@ func FunctionName(a MyType, parameters...) <return values> {
 -  interfaces can be used for **composition**. In practice, this means that you can combine existing interfaces and create new ones. 
 
 <div style="text-align:center">
-  <img src="./images3/4.png" alt="4" width="500"/>
+  <img src="./images3/5.png" alt="5" width="500"/>
 </div>
 
 #### The sort.Interface interface 
@@ -1858,8 +1858,40 @@ func main() {
 - As Go does not support all object-oriented features, it cannot replace an object-oriented programming language fully. However, it can mimic some object-oriented concepts.
 - First of all, a Go structure with its type methods is like an object with its methods. Second, interfaces are like abstract data types that define behaviors and objects of the same class, which is similar to polymorphism. Third, Go supports encapsulation, which means it supports hiding data and functions from the user by making them private to the structure and the current Go package. Lastly, combining interfaces and structures is like composition in object-oriented terminology.
 - If you really want to develop applications using the object-oriented methodology, then choosing Go might not be your best option. As I am not really into Java, I would suggest looking at C++ or Python instead. The general rule here is to choose the best tool for your job.
-   .... here
+
+1. Go Structures as Objects:
+
+- In Go, a structure with its methods is like an object with its methods in OOP. You can associate functions (methods) with a structure to operate on its data.
+
+2. Interfaces and Polymorphism:
+
+- Interfaces in Go behave similarly to abstract data types in OOP. They define behaviors that objects of the same class can implement, which is akin to polymorphism.
+- In Go, if a data type implements the methods specified by an interface, it satisfies that interface. This is like polymorphism, where different objects can be used interchangeably.
+
+3. Encapsulation:
+
+- Go supports encapsulation by allowing you to hide data and functions within a structure and make them private to the structure and its package.
+- Private fields and methods are only accessible from within the package, which is similar to OOP's encapsulation.
+
+4. Composition:
+
+- In Go, you can compose structures by embedding one structure into another to access its fields and methods. This is similar to composition in OOP, where one object is composed of other objects.
+
+```go
+type Engine struct {
+	FuelType string
+	Horsepower int
+}
+
+type Car struct {
+	Make  string
+	Model string
+	Engine // Embedding the Engine struct
+}
+```
 
 ## Chapter 5: Go Packages and Functions
+
+### Go Packages
 
 162 (183 / 683)
