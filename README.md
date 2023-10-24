@@ -1876,7 +1876,7 @@ func main() {
 4. Composition:
 
 - In Go, you can compose structures by embedding one structure into another to access its fields and methods. This is similar to composition in OOP, where one object is composed of other objects.
-
+****
 ```go
 type Engine struct {
 	FuelType string
@@ -1892,6 +1892,28 @@ type Car struct {
 
 ## Chapter 5: Go Packages and Functions
 
+- Regarding the visibility of package elements, Go follows a simple rule that states that functions, variables, data types, structure fields, and so forth that begin with an uppercase letter are **public**, whereas functions, variables, types, and so on that begin with a lowercase letter are **private**.
+- The same rule applies not only to the name of a struct variable but to the fields of a struct variable.this means that you can have a struct variable with both private and public fields. 
+- this rule does not affect package names, which are allowed to begin with either uppercase or lowercase letters.
+
 ### Go Packages
+
+- Everything in Go is delivered in the form of packages. A Go package is a Go source file that begins with the package keyword, followed by the name of the package.
+- Packages are mainly used for grouping related functions, variables, and constants so that you can transfer them easily and use them in your own Go programs. 
+- packages need to be called directly or indirectly from a main package.
+
+#### Downloading Go packages
+
+- main directories under ~/go :
+ 1. The bin directory: This is where binary tools are placed.
+ 2. The pkg directory: This is where reusable packages are put.
+
+- `go get github.com/spf13/cobra`
+- update a package : `go get -u -v github.com/spf13/viper`
+- Starting with Go 1.16, `go install` is the recommended way of building and installing packages in **module mode**. The use of `go get` is deprecated, However, `go mod init `and `go mod tidy `for downloading external dependencies for your own source files.
+
+### Functions
+
+- The main elements of packages are functions.
 
 162 (183 / 683)
