@@ -1915,5 +1915,231 @@ type Car struct {
 ### Functions
 
 - The main elements of packages are functions.
+- functions accept none, one, or more arguments and return none, one, or more values back.
+- when the main() function ends, the entire program ends as well.
+
+#### Anonymous functions
+
+- Anonymous functions can be defined inline without the need for a name, and they are usually used for implementing things that require a small amount of code.
+- In Go, a function can return an anonymous function or take an anonymous function as one of its arguments.
+- anonymous functions can be attached to Go variables. 
+- Note that anonymous functions are called **lambdas** in functional programming terminology.
+- a closure is a specific type of anonymous function that carries or closes over variables that are in the same lexical scope as the anonymous function that was defined.
+- It is considered a good practice for anonymous functions to have a small implementation and a local focus. If an anonymous function does not have a local focus, then you might need to consider making it a regular function. When an anonymous function is suitable for a job, it is extremely convenient and makes your life easier; just do not use too many anonymous functions in your programs without having a good reason to. 
+
+#### Functions that return multiple values
+
+- if you have a function that returns more than 3 values, you should reconsider that decision and maybe redesign it to use a single structure or slice for grouping and returning the desired values as a single entity—this makes handling the returned values simpler and easier.
+
+```go
+package main
+
+// compulsory use of parentheses when a function returns more than one value.
+func doubleSquare(x int) (int, int) {
+	return x * 2, x * x
+}
+
+```
+
+#### The return values of a function can be named
+
+```go
+// min and max are defined in the function signature and not in the function body.
+func minMax(x, y int) (min, max int) {
+	if x > y {
+		min = y
+		max = x
+		return min, max
+	}
+	min = x
+	max = y
+	return // You can simply return without specifying variables, as they are named in the signature
+}
+```
+
+```go
+package main
+
+import "fmt"
+
+// Function that returns two named values
+func divide(a, b float64) (quotient float64, remainder float64) {
+    quotient = a / b
+    remainder = a - (quotient * b)
+    return // You can simply return without specifying variables, as they are named in the signature
+}
+
+func main() {
+    result1, result2 := divide(10, 3)
+    fmt.Printf("Quotient: %.2f, Remainder: %.2f\n", result1, result2)
+}
+```
+
+#### Functions that accept other functions as parameters
+
+- `func Slice(x any, less func(i, j int) bool)`, The function parameter of sort.Slice() is named less and should have the `func(i, j int) bool` signature—there is no need for you to name the anonymous function. The name less is required because all function parameters should have a name.
+
+#### Functions can return other functions
+
+```go
+package main
+
+import "fmt"
+
+// createMultiplier returns a function that multiplies a number by a given factor.
+func createMultiplier(factor int) func(int) int {
+    return func(x int) int {
+        return x * factor
+    }
+}
+
+func main() {
+    // Create two specialized multiplier functions.
+    double := createMultiplier(2)
+    triple := createMultiplier(3)
+
+    // Use the specialized functions.
+    result1 := double(5) // Multiplies 5 by 2, result is 10
+    result2 := triple(4) // Multiplies 4 by 3, result is 12
+
+    fmt.Printf("Result 1: %d\n", result1)
+    fmt.Printf("Result 2: %d\n", result2)
+}
+```
+#### Variadic functions
+
+1. **Pack (...):** `func add(arg1, args ...typeN)`
+
+2. **Unpack (...):**  `values := []int{10, 20, 30}` `result := add(values...)`
+
+- Variadic functions are functions that can accept a variable number of parameters. you already know about fmt.Println() and append(), which are both variadic functions. 
+- Variadic functions use the **pack operator**, which consists of a **...**, followed by a data type. So, for a variadic function to accept a variable number of int values, the **pack operator** should be `...int`.
+- The pack operator can only be used once in any given function.
+-  The variable that holds the pack operation is a slice and, therefore, is accessed as a slice inside the variadic function.
+-  The variable name that is related to the pack operator is always last in the list of function parameters.
+ 
+```go
+func functionName(arg1 type1, arg2 type2, args ...typeN) returnType {
+    // Function implementation
+}
+```
+
+- When calling a variadic function, you should put a list of values separated by , in the place of the variable with the pack operator or a slice with the unpack operator.
+- The pack operator can also with `...interface{}`
+
+- data types ([]string and []interface{}) do not have the same representations in memory.
+
+- In Go, when passing a slice to a variadic function, you cannot directly use ... with the slice if the types don't match. You need to convert the slice to []interface{} and then use ... to pass its individual values to the variadic function. This conversion is necessary because Go enforces strict type checking.
+- https://github.com/golang/go/wiki/InterfaceSlice
+
+```go
+package main
+
+import "fmt"
+
+func printArgs(args ...interface{}) {
+    for _, arg := range args {
+        fmt.Println(arg)
+    }
+}
+
+func main() {
+    // Attempt to pass a string slice directly to the variadic function
+    // This won't work due to type mismatch.
+    // printArgs([]string{"apple", "banana", "cherry"})
+
+    // Convert the string slice to []interface{} and then pass it.
+    fruits := []string{"apple", "banana", "cherry"}
+    empty := make([]interface{}, len(fruits))
+    for i, v := range fruits {
+        empty[i] = v
+    }
+
+    // Now you can pass empty... to the variadic function.
+    printArgs(empty...)
+}
+```
+
+#### The defer keyword
+
+The `defer` statement is a unique feature in Go that allows you to postpone the execution of a function until the surrounding function returns. It is particularly useful for managing resources, cleanup, and controlling the order of function execution. Key criteria for using `defer` are as follows:
+
+1. **Last-In-First-Out (LIFO) Execution:**
+   - Deferred functions are executed in a reverse order (LIFO). The last deferred function added is the first to execute before the surrounding function returns.
+
+```go
+func example1() {
+    defer fmt.Println("Last")
+    defer fmt.Println("First")
+    fmt.Println("Middle")
+}
+```
+2. **Resource Cleanup:**
+   - `defer` is commonly used for resource management, such as closing files, ensuring that resources are properly released.
+
+```go
+func fileHandling() {
+    file, err := os.Create("example.txt")
+    if err is not nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    defer file.Close() // Ensures file closure when the function returns.
+    // Perform file operations.
+}
+```
+
+3. **Function Arguments Evaluation:**
+   - Be aware that arguments to deferred functions are evaluated when the `defer` statement is encountered, not when the function executes.
+
+```go
+func example3() {
+    x := 5
+    defer fmt.Println("Deferred:", x) // x is evaluated when `defer` is called.
+    x = 10
+    fmt.Println("Original:", x)
+}
+```
+
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func d1() {
+	for i := 3; i > 0; i-- {
+		defer fmt.Print(i, " ")
+	}
+} // 1 2 3 
+
+func d2() {
+	for i := 3; i > 0; i-- {
+		defer func() {
+			fmt.Print(i, " ")
+		}()
+	}
+	fmt.Println()
+} // 0 0 0 
+
+func d3() {
+	for i := 3; i > 0; i-- {
+		defer func(n int) {
+			fmt.Print(n, " ")
+		}(i)
+	}
+} // 1 2 3 
+
+func main() {
+	d1()
+	d2()
+	fmt.Println()
+	d3()
+	fmt.Println()
+}
+```
+### Developing your own packages
 
 162 (183 / 683)
