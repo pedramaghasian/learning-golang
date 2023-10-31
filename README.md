@@ -2142,4 +2142,60 @@ func main() {
 ```
 ### Developing your own packages
 
+- The only exception to this Go rule is package names—it is a best practice to use lowercase package names, even though uppercase package names are allowed.
+
+- Compiling a Go package can be done manually, if the package exists on the local machine, but it is also done automatically after you download the package from the internet. `go build -o post.a post05.go`
+- The main reason for compiling Go packages on your own is to check for syntax or other kinds of errors in your code.
+
+**go plugins:**
+
+- Additionally, you can build Go packages as plugins (https:// golang.org/pkg/plugin/) or shared libraries.
+  
+#### The init() function
+
+- Each Go package can optionally have a private function named `ini ()` that is automatically executed at the beginning of execution time.`init()` runs when the package is initialized at the beginning of program execution. The `init()` function has the following characteristics:
+
+1. `init()` takes no arguments.
+2. `init()` returns no values.
+3. The `init()` function is optional.
+4. The `init()` function is called implicitly by Go.
+5. You can have an `init()` function in the main package. In that case, `init()` is executed before the `main()` function. 
+6. A source file can contain multiple `init()` functions—these are executed in the order of declaration.
+7. The `init()` function or functions of a package are executed only once, even if the package is imported multiple times.
+8. Go packages can contain multiple files. Each source file can contain one or more `init()` functions.
+
+- There are some exceptions where the use of init() makes sense:
+
+1. For initializing network connections that might take time prior to the execution of package functions or methods.
+2. For initializing connections to one or more servers prior to the execution of package functions or methods.
+3. For creating required files and directories.
+4. For checking whether required resources are available or not.
+
+#### Order of execution
+
+- if a main package imports package A and package A depends on package B, then the following will take place:
+
+1. The process starts with main package.
+2. The main package imports package A.
+3. Package A imports package B.
+4. The global variables, if any, in package B are initialized
+5. The init() function or functions of package B, if they exist, run. This is the first init() function that gets executed.
+6. The global variables, if any, in package A are initialized.
+7. The init() function or functions of package A, if there are any, run.
+8. The global variables in the main package are initialized.
+9. The init() function or functions of main package, if they exist,
+10. The main() function of the main package begins execution.
+
+
+**Notice that if the main package imports package B on its own, nothing is going to happen because everything related to package B is triggered by package A. This is because package A imports package B first**
+
+<div style="text-align:center">
+  <img src="./images3/6.png" alt="6" width="500"/>
+</div>
+
+- You can learn more about the order of execution in Go by reading the Go Language Specification document at https://golang.org/ref spec#Order_of_evaluation and about package initialization at https:/ golang.org/ref/spec#Package_ initialization.
+
+### Using GitHub to store Go packages
+
+### A package for working with a database
 162 (183 / 683)
