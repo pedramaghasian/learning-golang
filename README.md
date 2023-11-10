@@ -2198,4 +2198,89 @@ func main() {
 ### Using GitHub to store Go packages
 
 ### A package for working with a database
-162 (183 / 683)
+
+- Go offers a generic package (https://golang.org/pkg/database sql/) for working with databases. However, each database requires a specific package that acts as the driver and allows Go to connect and work with this specific database.
+
+#### Getting to know your database
+
+You most likely need to download an additional package for working with a database server such as Postgres, MySQL, or MongoDB.
+
+#### Storing the Go package
+
+- store on github
+
+#### The design of the Go package
+
+- when working with a specific database and schema, you need to "include" the schema information in your Go code. Put simply, the Go code should know about the schema it works on.
+
+### Modules
+
+- A Go module is like a Go package with a version—however, Go modules can consist of multiple packages.
+-  Go uses semantic versioning for versioning modules. This means that versions begin with the letter v, followed by the major.minor patch version numbers. Therefore, you can have versions such as v1 0.0, v1.0.5, and v2.0.2.
+-  The v1, v2, and v3 parts signify the major version of a Go package that is usually not backward compatible. This means that if your Go program works with v1, it will not necessarily work with v2 or v3—it might work, but you cannot count on it. The second number in a version is about features. Usually, v1.1.0 has more features than v1.0.2 or v1.0.0, while being compatible with all older versions. Lastly, the third number is just about bug fixes without having any new features. Note that semantic versioning is also used for Go versions.
+-  https://go.dev/blog/using-go-modules
+
+### Creating better packages
+
+This section offers valuable advice for developing high-quality Go packages. Follow these rules to ensure your packages are well-organized and user-friendly:
+
+- **Connectivity:** Elements within a package should have a logical connection. It's advisable to create separate packages for different functionalities rather than combining unrelated features in a single package.
+
+- **Internal Testing:** Before making packages public, extensively use them internally to identify and resolve bugs. Share with fellow developers for additional testing and always include tests for any package.
+
+- **Clear API:** Ensure your package has a clear and useful API for quick user productivity.
+
+- **Limited Public API:** Limit the public API to what's essential. Use descriptive but concise function names.
+
+- **Interfaces and Generics:** Consider using interfaces and, in future Go versions, generics to enhance function usefulness.
+
+- **Backward Compatibility:** When updating packages, avoid breaking existing functionality or creating incompatibilities unless necessary.
+
+- **Multiple Files:** When developing a new package, use multiple files to group similar tasks or concepts.
+
+- **Avoid Redundancy:** Instead of creating a new package from scratch, make changes to existing ones or create your own version.
+
+- **Logging Best Practices:** Avoid packages that print logging information on the screen. Use flags for logging control when needed.
+
+- **Code Harmony:** Ensure your package code aligns with the code of the programs using it. Choose concise and expressive package names.
+
+- **Organized Type Definitions:** Place new Go type definitions near where they are first used for convenience.
+
+- **Test Files:** Create test files for your packages, as packages with tests are considered more professional.
+
+- **Documentation Importance:** Emphasize the importance of bug-free code and comprehensive documentation. Include code examples to showcase package functionality.
+
+In summary, creating successful Go packages involves thoughtful organization, extensive testing, clear APIs, and thorough documentation.
+
+### Generating documentation
+
+- Go follows a simple rule regarding documentation: in order to document a function, a method, a variable, or even the package itself, you can write comments, as usual, that should be located directly before the element you want to document, without any empty lines in between. You can use one or more single-line comments, which are lines beginning with //, or block comments, which begin with /* and end with */—everything in-between is considered a comment.
+
+- It is highly recommended that each Go package you create has a block comment preceding the package declaration that introduces developers to the package, and also explains what the package does.
+
+```go
+/*
+your doc 
+*/
+package document
+
+
+/*
+This block of global variables holds the connection details to the
+Postgres server
+Hostname: is the IP or the hostname of the server
+Port: is the TCP port the DB server listens to
+Username: is the username of the database user
+Password: is the password of the database user
+Database: is the name of the Database in PostgreSQL
+*/
+var (
+Hostname = ""
+Port = 2345
+Username = ""
+Password = ""
+Database = ""
+)
+```
+
+## Chapter 6: Telling a UNIX System What to Do
