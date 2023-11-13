@@ -2284,3 +2284,48 @@ Database = ""
 ```
 
 ## Chapter 6: Telling a UNIX System What to Do
+
+## Chapter 7: Go Concurrency
+
+**OS Scheduler:**
+- The operating system (OS) scheduler is responsible for managing the execution of threads on the CPU. It decides when a thread should run, pause, or resume based on various factors like priority and time-sharing.
+
+**Go Runtime:**
+- The Go runtime is the environment that manages Go programs. It includes components like memory management, garbage collection, and the scheduler for goroutines.- 
+
+**Threads and GOMAXPROCS:**
+- In Go, when we talk about threads, we're referring to the threads that execute Go code (goroutines). The GOMAXPROCS variable is a setting that defines the maximum number of operating system threads that can execute Go code simultaneously.
+
+- The key component of the Go concurrency model is the **goroutine**, which is the minimum executable entity in Go.
+- Everything in Go is executed as a goroutine, either transparently or consciously.
+-  Each executable Go program has at least one goroutine, which is used for running the main() function of the main package. 
+-  Each goroutine is executed on a single OS thread according to the instructions of the **Go scheduler**, which is responsible for the execution of goroutines.
+-  The OS scheduler does not dictate how many threads the Go runtime is going to create because the Go runtime will spawn enough threads to ensure that **GOMAXPROCS** threads are available to run Go code.
+-  The OS scheduler does not dictate how many threads the Go runtime is going to create because the Go runtime will spawn enough threads to ensure that GOMAXPROCS threads are available to run Go code.
+
+- goroutines cannot directly communicate with each other. 
+- Data sharing in Go is implemented using either channels or shared memory.
+- Channels act as the glue that connects multiple goroutines.
+- Remember that although goroutines can process data and execute commands, they cannot communicate directly with each other, but they can communicate in other ways, including channels, local sockets, and shared memory.
+- channels cannot process data or execute code but can send data to goroutines, receive data from goroutines, or have a special purpose.
+
+- When you combine multiple channels and goroutines you can create data flows, which in Go terminology are also called **pipelines**
+-  So, you might have a goroutine that reads data from a database and sends it to a channel and a second goroutine that reads from that channel, processes that data, and sends it to another channel in order to be read from another goroutine, before making modifications to the data and storing it to a different database.
+
+### Processes, threads, and goroutines
+
+**Process**
+
+- view all processes : `ps -e`
+- view all processes in more detail : `ps aux`
+
+- **A ***process*** is an OS representation of a running program, while a ***program*** is a binary file on disk that contains all the information necessary for creating an OS process.**
+- The binary file is written in a specific format (ELF on Linux) and contains all the instructions the CPU is going to run as well as a plethora of other useful sections.
+- That program is loaded into memory and the instructions are executed, creating a running process. So, a process carries with it additional resources such as memory, opened file descriptions, and user data as well as other types of resources that are obtained during runtime.
+
+**Thread**
+
+- view the threads of a process : `ps -e` => `ps -T -p <PID>`
+- A **thread** is a smaller and lighter entity than a process.
+- Processes consist of one or more threads that have their own flow of control and stack.
+- a process as the running binary file and a thread as a subset of a process.
