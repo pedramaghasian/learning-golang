@@ -2324,8 +2324,12 @@ Database = ""
 - That program is loaded into memory and the instructions are executed, creating a running process. So, a process carries with it additional resources such as memory, opened file descriptions, and user data as well as other types of resources that are obtained during runtime.
 
 **Thread**
-
 - view the threads of a process : `ps -e` => `ps -T -p <PID>`
+
 - A **thread** is a smaller and lighter entity than a process.
 - Processes consist of one or more threads that have their own flow of control and stack.
 - a process as the running binary file and a thread as a subset of a process.
+
+**goroutines**
+
+- A goroutine is the *minimum* Go entity that can be executed concurrently. The use of the word *minimum* is very important here, as goroutines are not autonomous entities like UNIX processes—goroutines live in OS threads that live in OS processes. 
