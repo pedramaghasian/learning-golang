@@ -2333,3 +2333,39 @@ Database = ""
 **goroutines**
 
 - A goroutine is the *minimum* Go entity that can be executed concurrently. The use of the word *minimum* is very important here, as goroutines are not autonomous entities like UNIX processes—goroutines live in OS threads that live in OS processes. 
+- The good thing is that goroutines are lighter than threads, which, in turn, are lighter than processes—running thousands or hundreds of thousands of goroutines on a single machine is not a problem.
+- Among the reasons that goroutines are lighter than threads is because they have a smaller stack that can grow, they have a faster startup time, and they can communicate with each other through channels with low latency.
+- In practice, this means that a process can have multiple threads as well as lots of goroutines, whereas a goroutine needs the environment of a process to exist.
+- So, to create a goroutine, you need to have a process with at least one thread.
+-  The OS takes care of the process and thread scheduling, while Go creates the necessary threads and the developer creates the desired number of goroutines.
+
+### The Go scheduler
+
+**OS Kernel Scheduler:**
+
+- The OS kernel scheduler is responsible for managing the execution of threads on the CPU. When you run a program, the operating system creates a process for it, and within that process, at least one thread is created to execute the program's instructions.The scheduler determines which thread from which process gets CPU time and when.
+
+- In summary, the OS kernel scheduler primarily manages the execution of threads. It decides which thread to run on the CPU, when to switch between threads, and how to distribute CPU time among the threads of different processes. Processes, in turn, contain one or more threads, and the scheduler ensures fair and efficient execution of these threads.
+
+**Go Schedular:**
+
+- The OS kernel scheduler is responsible for the execution of the threads of a program. Similarly, the Go runtime has its own scheduler, which is responsible for the execution of the goroutines using a technique known as **m:n scheduling**,, where m goroutines are executed using n OS threads using multiplexing.
+- The Go scheduler is the Go component responsible for the way and the order in which the goroutines of a Go program get executed.
+- The Go scheduler is executed as a goroutine.
+- Be aware that as the Go scheduler only deals with the goroutines of a single program.
+
+- Go uses the **fork-join concurrency** model.
+   1. Fork-join model: This is a way of organizing concurrent operations in a program. In Go, it means that at any point in the program, a new branch (like a separate path or task) can be created. This is called the "fork" part.
+   2. Fork (not the fork system call): The "fork" mentioned here is not the same as the fork system call used in some operating systems. It's a concept in the Go language for creating a new branch of execution.
+   3. Join part: This is where the separately created branch comes back together with the main program. It's like when the delegated cooking task is completed, and the results are combined back into the main cooking process. This is called the "join" part.
+   4. sync.Wait() and channels as join points: In Go, you can use sync.Wait() statements and channels to manage the joining of branches.
+   5. Creating child branches with goroutines: In Go, starting a new goroutine is like creating a child branch. Goroutines are lightweight threads of execution, and each new one represents a new task or branch of work.
+
+ - **Fair Scheduling Strategy:**
+   1. Description: Distributes tasks evenly among available processors.
+   2. Example Analogy: Like ensuring each chef in a kitchen gets an equal share of cooking tasks.
+
+- **Work-Stealing Strategy (Used by Go Scheduler):**
+   1. Description: Underutilized processors actively seek additional work from other processors to balance the workload.
+   2. Example Analogy: If one chef finishes early, they offer help to a busy chef, ensuring everyone stays busy and work is completed   efficiently.
+
