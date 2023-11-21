@@ -2341,6 +2341,12 @@ Database = ""
 
 ### The Go scheduler
 
+The Go runtime is responsible for the communication between the Go program and the hardware (via OS).
+
+<div style="text-align:center">
+  <img src="./images3/7.png" alt="7" width="500"/>
+</div>
+
 **OS Kernel Scheduler:**
 
 - The OS kernel scheduler is responsible for managing the execution of threads on the CPU. When you run a program, the operating system creates a process for it, and within that process, at least one thread is created to execute the program's instructions.The scheduler determines which thread from which process gets CPU time and when.
@@ -2369,3 +2375,48 @@ Database = ""
    1. Description: Underutilized processors actively seek additional work from other processors to balance the workload.
    2. Example Analogy: If one chef finishes early, they offer help to a busy chef, ensuring everyone stays busy and work is completed   efficiently.
 
+
+1. **Go Scheduler and m:n Scheduling:**
+Explanation: The Go scheduler manages the execution of goroutines in a Go program. It uses a technique called m:n scheduling, where m goroutines are executed using n OS threads with multiplexing.
+Example Analogy: Think of the Go scheduler as a manager assigning tasks (goroutines) to workers (OS threads) in an efficient way, like having a few chefs (OS threads) multitasking to handle various cooking tasks (goroutines).
+2. **Fork-Join Concurrency Model:**
+Explanation: Go follows a fork-join model, allowing the creation of child branches (fork) at any point in a program. These branches join back with the main program (join).
+Example Analogy: In a big cooking project, chefs (goroutines) can start new tasks (fork) independently, and when those tasks are done, they join back to contribute to the final meal.
+3. **Fair Scheduling Strategy:**
+Explanation: The fair scheduling strategy distributes tasks evenly among available processors. However, it may not be perfect for tasks with dependencies, leading to some processors being underutilized.
+Example Analogy: Distributing ingredients evenly among chefs may seem fair, but if some tasks depend on others, some chefs may end up with more idle time.
+4. **Work-Stealing Strategy:**
+Explanation: In the work-stealing strategy, underutilized processors actively seek additional work from other processors to balance the workload efficiently.
+Example Analogy: Chefs finishing early offer help to busier chefs, ensuring everyone stays productive and the cooking process is efficient.
+5. **GOMAXPROCS and Entities in Go Scheduler:**
+Explanation: The Go scheduler operates with three main entities: OS threads (M), goroutines (G), and logical processors (P). GOMAXPROCS specifies the number of processors a Go program can use.
+Example Analogy: Think of GOMAXPROCS as setting the maximum number of chefs (logical processors) in the kitchen, and each chef can handle multiple tasks (goroutines).
+6. **Global and Local Run Queues:**
+Explanation: The scheduler uses global and local run queues to manage the execution of goroutines. Stealing occurs between local queues of available logical processors.
+Example Analogy: The global run queue is like a central task list, and each chef's local run queue is their personal to-do list. Chefs can help each other by taking tasks from the central list.
+7. **GOMAXPROCS and OS Threads:**
+Explanation: The Go scheduler can create more OS threads as needed, but dealing with too many can be resource-intensive.
+Example Analogy: Creating more chefs (OS threads) when the kitchen gets busy, but being mindful not to have too many as it might slow down the overall cooking process.
+
+#### The GOMAXPROCS environment variable
+
+- The GOMAXPROCS environment variable allows you to set the number of OS threads (CPUs) that can execute user-level Go code simultaneously. Starting with Go version 1.5, the default value of GOMAXPROCS should be the number of logical cores available in your machine. There is also the runtime.GOMAXPROCS() function, which allows you to set and get the value of GOMAXPROCS programmatically.
+
+```go
+func main() {
+	fmt.Println("You are using ", runtime.Compiler, " ")
+	fmt.Println("on a", runtime.GOARCH, "machine")
+	fmt.Println("Using Go version", runtime.Version())
+	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
+}
+```
+#### Concurrency and parallelism
+
+- Parallelism is the simultaneous execution of multiple entities of some kind, whereas concurrency is a way of structuring your components so that they can be executed independently when possible.
+- he importance of a well-designed concurrent system, where adding concurrent entities can enhance overall system performance, even if parallel execution is not immediately achievable on a given machine.
+
+### Goroutines
+
+- You cannot control or make any assumptions about the order in which your goroutines are going to be executed because that depends on the scheduler of the OS, the Go scheduler, and the load of the OS.
+
+#### Creating a goroutine
