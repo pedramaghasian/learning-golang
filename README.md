@@ -2420,3 +2420,242 @@ func main() {
 - You cannot control or make any assumptions about the order in which your goroutines are going to be executed because that depends on the scheduler of the OS, the Go scheduler, and the load of the OS.
 
 #### Creating a goroutine
+
+**goroutines do not return any values directly.**
+
+```go
+
+func main() {
+    go func(x int) {
+        fmt.Printf("%d ", x)
+    }(10)
+
+go printme(15)
+
+//Go program does not wait for its goroutines to end before exiting, we need to delay it manually
+time.Sleep(time.Second)
+fmt.Println("Exiting...")
+}
+```
+
+#### Creating multiple goroutines
+
+-  There is nothing prohibiting you from using a for loop to create multiple goroutines, especially when you want to create lots of them.
+
+```go
+fmt.Printf("Going to create %d goroutines.\n", count)
+for i := 0; i < count; i++ {
+
+	    go func(x int) {
+        fmt.Printf("%d ", x)
+        }(i) 
+}
+time.Sleep(time.Second)
+fmt.Println("\nExiting...")
+```
+
+#### Waiting for your goroutines to finish ( how to remove the call to time.Sleep() and make your programs wait for the goroutines to finish)
+
+- The synchronization process begins by defining a `sync.WaitGroup` variable and using the `Add()`, `Done()` and `Wait()` methods.
+- If you look at the source code of the sync Go package, and more specifically at the waitgroup.go file, you see that the sync.WaitGroup type is nothing more than a structure with two fields:
+
+```go
+type WaitGroup struct {
+    noCopy noCopy
+    state1 [3]uint32
+}
+```
+
+- Each call to `sync.Add()` **increases** a counter in the **state1** field, which is an array with three uint32 elements. Notice that it is really **important to call `sync.Add()` before the go statement** in order to prevent any race conditions, When each goroutine finishes its job, the `sync.Done()` function should be executed in order to **decrease** the same counter by one. Behind the scenes, `sync.Done()` runs a `Add(-1)` call. The `Wait()` method waits until that counter becomes 0 in order to return. The return of `Wait()` inside the `main()` function means that `main()` is going to return and the program ends.
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"sync"
+)
+
+func main() {
+	count := 10
+
+	var waitGroup sync.WaitGroup
+	for i := 0; i < count; i++ {
+		//We call Add(1) just before we create the goroutine in order to avoid race conditions.
+		waitGroup.Add(1)
+		go func(x int) {
+			defer waitGroup.Done()
+			fmt.Printf("%d ", x)
+		}(i)
+	}
+
+//The Wait() function is going to wait for the counter in the waitGroup variable to become 0 before it returns,
+	waitGroup.Wait()
+	fmt.Println("\nExiting...")
+}
+```
+
+**Remember that using more goroutines in a program is not a panacea for performance, as more goroutines, in addition to the various calls to s`ync.Add()`, `sync.Wait()`, and `sync.Done()`, might slow down your program due to the extra housekeeping that needs to be done by the Go scheduler.**
+
+#### What if the number of Add() and Done() calls differ?
+
+- When the number of `sync.Add()` calls and `sync.Done()` calls are equal, everything is going to be fine in your programs. 
+- If the number of `Add()` and `Done()` calls differs in Go's `sync.WaitGroup`, it can lead to synchronization issues. A mismatch may cause your program to either wait indefinitely or prematurely exit. Ensuring a one-to-one correspondence between `Add()` and `Done()` calls is crucial for proper synchronization, preventing potential deadlocks or unexpected program termination.
+
+### Channels
+
+- A channel is a communication mechanism that, among other things, allows goroutines to exchange data.
+- each channel allows the exchange of a particular data type, which is also called the element type of the channel.
+- for a channel to operate properly, you need someone to receive what is sent via the channel.
+- `make(chan int)`
+- A **pipeline** is a virtual method for connecting goroutines and channels so that the output of one goroutine becomes the input of another goroutine using channels to transfer your data.
+- When trying to read from a closed channel, we get the zero value of its data type
+
+#### Writing to and reading from a channel
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+func writeToChannel(c chan int, x int) {
+	c <- x
+	close(c)
+}
+
+func printer(ch chan bool) {
+	ch <- true
+}
+
+func main() {
+	c := make(chan int, 1)
+
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(1)
+	go func(c chan int) {
+		defer waitGroup.Done()
+		writeToChannel(c, 10)
+		fmt.Println("Exit.")
+	}(c)
+
+	fmt.Println("Read:", <-c)
+	// a technique for determining whether a channel is closed or not. In this case, we are ignoring the read value—if the channel was open, then the read value would be discarded.
+	_, ok := <-c
+	if ok {
+		fmt.Println("Channel is open!")
+	} else {
+		fmt.Println("Channel is closed!")
+	}
+
+	waitGroup.Wait()
+
+	var ch chan bool = make(chan bool)
+	for i := 0; i < 5; i++ {
+		go printer(ch)
+	}
+
+	// Range on channels
+	// IMPORTANT: As the channel c is not closed,
+	// the range loop does not exit by its own.
+	//  a range loop on a channel only exits when the channel is closed or using the break keyword.
+	n := 0
+	for i := range ch {
+		fmt.Println(i)
+		if i == true {
+			n++
+		}
+		if n > 2 {
+			fmt.Println("n:", n)
+			close(ch)
+			break
+		}
+	}
+
+	for i := 0; i < 5; i++ {
+		fmt.Println(<-ch)
+	}
+}
+```
+
+**buffered and unbuffered channel** 
+
+- **Buffered** 
+- This channel `ch := make(chan int, 1)` is buffered with a size of 1. This means that as soon as we fill that buffer, we can close the channel and the goroutine is going to continue its execution and return.
+
+```go
+
+package main
+
+import "fmt"
+
+func main() {
+    ch := make(chan int, 2) // Buffered channel with a capacity of 2
+
+    go func() {
+        ch <- 42
+        ch <- 23 // Alice throws two balls into the box
+    }()
+
+    result := <-ch // Bob takes the first ball out
+    fmt.Println(result)
+
+    result = <-ch // Bob takes the second ball out
+    fmt.Println(result)
+}
+```
+- **Unbuffered** 
+-  when you try to send a value to that channel, it blocks forever because it is waiting for someone to fetch that value.
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    ch := make(chan int) // Unbuffered channel
+
+    go func() {
+        ch <- 42 // Alice throws the ball to Bob
+    }()
+
+    result := <-ch // Bob catches the ball
+    fmt.Println(result)
+}
+```
+
+#### Receiving from a closed channel
+
+- Reading from a closed channel returns the zero value of its data type.
+- if you try to write to a closed channel, your program is going to crash in a bad way (panic).
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	willClose := make(chan complex64, 10)
+
+	// Write some data to the channel
+	willClose <- -1
+	willClose <- 1i
+
+	// Read data and empty channel
+	<-willClose
+	<-willClose
+	close(willClose)
+
+	// Read again – this is a closed channel
+	read := <-willClose
+	fmt.Println(read)
+}
+```
+
+#### Channels as function parameters
