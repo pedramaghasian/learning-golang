@@ -2659,3 +2659,417 @@ func main() {
 ```
 
 #### Channels as function parameters
+
+- When using a channel as a function parameter, you can specify its direction; that is, whether it is going to be used for sending or receiving data. 
+
+- This function accepts a channel parameter that is available for writing only.
+```go
+func printer(ch chan<- bool) {
+    ch <- true
+}
+```
+
+- The channel parameter of this function is available for reading only.
+```go
+func f2(out <-chan int, in chan<- int) {
+    x := <-out
+    fmt.Println("Read (f2):", x)
+    in <- x
+    return
+}
+```
+
+### Race conditions
+
+- A data race condition is a situation where two or more running elements, such as threads and goroutines, try to take control of or modify a shared resource or shared variable of a program. 
+- a data race occurs when two or more instructions access the same memory address, where at least one of them performs a write (change) operation.
+- If all operations are read operations, then there is no race condition.
+- **this means that you might get different output if you run your program multiple times, and that is a bad thing.**
+
+#### The Go race detector
+- The Go race detector is a tool designed to detect race conditions in concurrent Go programs.
+- ` go run -race main.go`
+
+
+#### The select keyword
+- In Go, the select statement is a language construct used for working with multiple channel operations concurrently. It allows a Go program to wait for communication on multiple channels simultaneously and execute code based on the first channel operation that becomes available. 
+- The select keyword is really important because it allows you to listen to multiple channels at the same time.
+- a select without any cases (select{}) waits forever.
+- select gives you the power to listen to multiple channels using a single select block.As a consequence, you can have nonBlocking operations on channels.
+
+```go
+select {
+case <-channel1:
+    // Code to be executed when channel1 is ready for receive
+case channel2 <- value:
+    // Code to be executed when channel2 is ready for send
+default:
+    // Code to be executed when no case is ready
+}
+```
+
+### Timing out a goroutine
+
+- There are times that goroutines take more time than expected to finish—in such situations, we want to time out the goroutines so that we can unblock the program. This section presents two such techniques.
+
+1. **Timing out a goroutine – inside main()**
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	c1 := make(chan string)
+	go func() {
+		time.Sleep(3 * time.Second)
+		c1 <- "c1 OK"
+	}()
+
+	select {
+	case res := <-c1:
+		fmt.Println(res)
+	case <-time.After(time.Second):
+		fmt.Println("timeout c1")
+	}
+
+	c2 := make(chan string)
+	go func() {
+		time.Sleep(3 * time.Second)
+		c2 <- "c2 OK"
+	}()
+
+	select {
+	case res := <-c2:
+		fmt.Println(res)
+	case <-time.After(4 * time.Second):
+		fmt.Println("timeout c2")
+	}
+}
+```
+2. **Timing out a goroutine – outside main()**
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+)
+
+var result = make(chan bool)
+
+func timeout(t time.Duration) {
+	temp := make(chan int)
+	go func() {
+		time.Sleep(5 * time.Second)
+		defer close(temp)
+	}()
+
+	select {
+	case <-temp:
+		result <- false
+	case <-time.After(t):
+		result <- true
+	}
+}
+
+func main() {
+	arguments := os.Args
+	if len(arguments) != 2 {
+		fmt.Println("Please provide a time duration in milliseconds!")
+		return
+	}
+
+	t, err := strconv.Atoi(arguments[1])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	duration := time.Duration(int32(t)) * time.Millisecond
+	fmt.Printf("Timeout period is %s\n", duration)
+
+	go timeout(duration)
+
+	val := <-result
+	if val {
+		fmt.Println("Time out!")
+	} else {
+		fmt.Println("OK")
+	}
+}
+```
+
+### Go channels revisited
+- the zero value of the channel type is nil.
+- if you send a message to a closed channel, the program panics.
+- if you try to read from a closed channel, you get the zero value of the type of that channel.
+- **after closing a channel, you can no longer write to it, but you can still read from it.**
+- To be able to close a channel, the channel must not be receive-only.
+- a nil channel always blocks, which means that both reading and writing from nil channels blocks.
+
+**Nil Channel Blocking:**
+- A nil channel always blocks both reading and writing operations. This means that if you attempt to read from or write to a nil channel, your program will be blocked, waiting for the operation to proceed.
+
+**Using Nil Channel to Disable a Branch:**
+- This blocking property can be useful when you want to disable a branch of a select statement. By assigning a nil value to a channel variable in one of the cases of the select statement, you effectively disable that branch.
+
+**Closing a Nil Channel:**
+- If you try to close a nil channel, your program will panic. Closing a channel that is already closed or is nil results in a runtime error.
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	// Creating a nil channel of type string
+	var c chan string
+
+	// Trying to read from a nil channel (blocks)
+	go func() {
+		value := <-c
+		fmt.Println("Read:", value)
+	}()
+
+	// Trying to write to a nil channel (blocks)
+	go func() {
+		c <- "Hello, Channel!"
+		fmt.Println("Write complete")
+	}()
+
+	// Using nil channel to disable a branch in select statement
+	select {
+	case msg := <-c:
+		fmt.Println("Received message:", msg)
+	default:
+		fmt.Println("No message received.")
+	}
+
+	// Trying to close a nil channel (panics)
+	close(c)
+
+	// Sleep to allow goroutines to complete (not the best practice in a real program)
+	time.Sleep(2 * time.Second)
+}
+```
+
+#### Buffered channels
+- These channels allow us to put jobs in a queue quickly in order to be able to deal with more requests and process requests later on. Moreover, you can use buffered channels as semaphores in order to limit the throughput of your application.
+
+#### nil channels
+- nil channels always block.
+
+```go
+package main
+
+import (
+	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+)
+
+var wg sync.WaitGroup
+
+func add(c chan int) {
+	sum := 0
+	t := time.NewTimer(time.Second)
+
+	for {
+		select {
+		case input := <-c:
+			sum = sum + input
+		case <-t.C:
+			c = nil
+			fmt.Println(sum)
+			wg.Done()
+		}
+	}
+}
+
+func send(c chan int) {
+	for {
+		c <- rand.Intn(10)
+	}
+}
+
+func main() {
+	c := make(chan int)
+	rand.Seed(time.Now().Unix())
+
+	wg.Add(1)
+	go add(c)
+	go send(c)
+	wg.Wait()
+}
+```
+
+#### Worker pools
+
+- A **worker pool** is a set of threads that process jobs assigned to them.
+- The Apache web server and the net/http package of Go more or less work this way:
+- the main process accepts all incoming requests, which are forwarded to worker processes to get served. Once a worker process has finished its job, it is ready to serve a new client. 
+- As Go does not have threads, the presented implementation is going to use goroutines instead of threads.
+- threads do not usually die after serving a request because the cost of ending a thread and creating a new one is too high, whereas goroutines do die after finishing their job.
+-  Worker pools in Go are implemented with the help of buffered channels, because they allow you to limit the number of goroutines running at the same time.
+
+### Signal channels
+- you can use a signal channel when you want to inform another goroutine about something.
+- Signal channels should not be used for data transferring.
+
+#### Specifying the order of execution for your goroutines
+- this technique works best when you are dealing with a small number of goroutines
+
+### Shared memory and shared variables
+- A **mutex** is mainly used for thread synchronization and for protecting shared data when multiple writes can occur at the same time.
+- A **mutex works like a buffered channel with a capacity of one**, which allows at most one goroutine to access a shared variable at any given time. 
+- Go offers the `sync.Mutex` and `sync.RWMutex` data types.
+
+#### The sync.Mutex type
+
+- The `sync.Mutex` type is the Go implementation of a **mutex**.
+- The definition of `sync.Mutex` is nothing special. All of the interesting work is done by the `sync.Lock()`and `sync.Unlock()` functions, which can lock and unlock a `sync.Mutex` variable.
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+var (
+	counter int
+	mutex   sync.Mutex
+	wg      sync.WaitGroup
+)
+
+func incrementCounter() {
+	defer wg.Done()
+
+	for i := 0; i < 5; i++ {
+		// Lock the mutex before accessing the shared resource (counter)
+		mutex.Lock()
+
+		// Critical Section: Accessing and modifying the shared resource
+		current := counter
+		time.Sleep(time.Millisecond) // Simulating some processing time
+		counter = current + 1
+
+		// Unlock the mutex after finishing the critical section
+		mutex.Unlock()
+	}
+}
+
+func main() {
+	// Number of goroutines
+	goroutines := 3
+
+	// Add goroutines to the WaitGroup
+	wg.Add(goroutines)
+
+	// Start goroutines
+	for i := 0; i < goroutines; i++ {
+		go incrementCounter()
+	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+
+	// Display the final value of the counter
+	fmt.Println("Final Counter Value:", counter)
+}
+```
+
+##### What happens if you forget to unlock a mutex?
+- Forgetting to unlock a sync.Mutex mutex creates a panic situation even in the simplest kind of a program.
+
+#### The sync.RWMutex type
+- The sync.RWMutex data type is an improved version of sync.
+- sync.RWMutex is based on sync.Mutex with the necessary additions and improvements. 
+- you can have multiple readers owning a sync.RWMutex mutex, this means that read operations are usually faster with sync.RWMutex.
+- until all of the readers of a sync.RWMutex mutex unlock that mutex, you cannot lock it for writing.
+- The functions that can help you to work with sync.RWMutex are RLock() and RUnlock(),which are used for locking and unlocking the mutex
+for reading purposes.
+- The Lock() and Unlock() functions used in sync.Mutex should still be used when you want to lock and unlock a sync.RWMutex mutex for writing purposes.
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+var (
+	counter int
+	rwMutex sync.RWMutex
+	wg      sync.WaitGroup
+)
+
+func reader(id int) {
+	defer wg.Done()
+
+	for i := 0; i < 3; i++ {
+		// Lock for reading
+		rwMutex.RLock()
+		fmt.Printf("Reader %d: Read Counter: %d\n", id, counter)
+		// Unlock after reading
+		rwMutex.RUnlock()
+
+		// Simulate some processing time
+		time.Sleep(time.Millisecond * 100)
+	}
+}
+
+func writer(id int) {
+	defer wg.Done()
+
+	for i := 0; i < 2; i++ {
+		// Lock for writing
+		rwMutex.Lock()
+		counter++
+		fmt.Printf("Writer %d: Incremented Counter to: %d\n", id, counter)
+		// Unlock after writing
+		rwMutex.Unlock()
+
+		// Simulate some processing time
+		time.Sleep(time.Millisecond * 200)
+	}
+}
+
+func main() {
+	// Number of readers and writers
+	readers := 3
+	writers := 2
+
+	// Add readers and writers to the WaitGroup
+	wg.Add(readers + writers)
+
+	// Start readers
+	for i := 1; i <= readers; i++ {
+		go reader(i)
+	}
+
+	// Start writers
+	for i := 1; i <= writers; i++ {
+		go writer(i)
+	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+}
+
+```
