@@ -3071,5 +3071,91 @@ func main() {
 	// Wait for all goroutines to finish
 	wg.Wait()
 }
-
 ```
+
+#### The atomic package
+- An atomic operation is an operation that is completed in a single step relative to other threads or, in this case, to other goroutines.
+-  an atomic operation cannot be interrupted in the middle of it.
+-  The Go Standard library offers the **atomic** package, which, in some simple cases, can help you to avoid using a mutex.
+-  **With the atomic package, you can have atomic counters accessed by multiple goroutines without synchronization issues and without worrying about race conditions.**
+-  when using an atomic variable, all reading and writing operations of an atomic variable must be done using the functions provided by the atomic package in order to avoid race conditions.
+
+```go
+
+package main
+
+import (
+	"fmt"
+	"sync"
+	"sync/atomic"
+)
+
+type atomCounter struct {
+	val int64
+}
+
+func (c *atomCounter) Value() int64 {
+	return atomic.LoadInt64(&c.val)
+}
+
+func main() {
+	X := 100
+	Y := 4
+	var waitGroup sync.WaitGroup
+	counter := atomCounter{}
+	for i := 0; i < X; i++ {
+		waitGroup.Add(1)
+		go func(no int) {
+			defer waitGroup.Done()
+			for i := 0; i < Y; i++ {
+				atomic.AddInt64(&counter.val, 1)
+			}
+		}(i)
+	}
+
+	waitGroup.Wait()
+	fmt.Println(counter.Value())
+}
+```
+
+#### Sharing memory using goroutines
+- shared memory is the traditional way that threads communicate with each other.
+- In Go, when we want different parts of our program to share information, we use goroutines. Unlike traditional methods, Go designates one goroutine as the owner of shared data. Others can't directly access it; instead, they send messages to the owner, preventing data corruption. This owner goroutine is called a "monitor." In Go, it's about sharing by communicating, not just freely sharing data. Think of it like having a monitor (guard) making sure everyone talks nicely to each other to avoid chaos when sharing information.
+
+### Closured variables and the go statement
+
+```go
+func main() {
+// As `i` is a closured variable, it is evaluated at the time of execution.
+    for i := 0; i <= 20; i++ {
+        go func() {
+            fmt.Print(i, " ")
+}() }
+    time.Sleep(time.Second)
+    fmt.Println()
+}
+// 3 7 21 21 21 21 21 21 21 21 21 21 21 21 21 21 21 21 21 21 21
+
+// corect 1 
+
+func main() {
+    for i := 0; i <= 20; i++ {
+        i := i
+        go func() {
+            fmt.Print(i, " ")
+        }()
+	}
+}
+
+// corect 2 
+func main() {
+	for i := 0; i <= 20; i++ {
+		go func(x int) {
+			fmt.Print(x, " ")
+		}(i)
+	}
+}
+```
+
+### The context package
+- The main purpose of the **context** package is to define the **Context type** and **support cancellation**. 
