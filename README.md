@@ -3159,3 +3159,74 @@ func main() {
 
 ### The context package
 - The main purpose of the **context** package is to define the **Context type** and **support cancellation**. 
+- The Context type is an interface with four methods named Deadline(), Done(), Err(), and Value().
+```go
+type Context interface {
+/*
+Imagine you have a timer for a task, and you want to know when the task should stop. In Go's Context type, there's a method called Deadline(). This method tells you the time when the task should finish, or in other words, when it should be canceled.
+
+If there's no specific time set for the task to finish (no deadline), the Deadline() method returns ok=false. It's like saying, "Hey, there's no fixed time for this task to be done.
+*/
+	Deadline() (deadline time.Time, ok bool)
+
+/*
+Imagine you have a special notification bell. In Go's Context type, there's a method called Done().
+When you call Done(), it gives you a channel. Think of this channel like your notification bell. This bell stays open as long as your task is ongoing. However, when the work you're doing with the context is canceled or finished, this bell (channel) gets closed. So, when you hear the bell ring (meaning the channel is closed), it tells you that the context is canceled. It's like a signal saying, "Hey, your task is done or canceled!"
+In short, Done() gives you a way to listen for a signal that tells you when your job is finished or canceled.
+*/
+	Done() <-chan struct{}
+
+/*
+This method returns an error value that explains why the context was canceled. If the context was canceled without an error, it returns nil.
+*/
+	Err() error
+
+/*
+This method returns the value associated with the key in the context. This is a way to carry data with the context.
+*/
+	Value(key any) any
+}
+```
+- The good news is that you do not need to implement all of these functions of the Context interface.
+- you just need to modify a Context variable using methods such as context.WithCancel(), context.WithDeadline(), and context. WithTimeout().
+
+- The context package in Go provides functions that return values implementing the Context interface. These functions, such as WithDeadline(), Background(), and others, are like factory methods that create instances of the Context interface with specific behaviors.
+
+ 1. `context.Background()`: Returns an empty Context. It is often used as a starting point to create other contexts.
+
+ 2. `context.TODO()` : Similar to context.Background(), it returns an empty Context. It is used when a function requires a Context, but you don't have a meaningful one to pass.
+ 
+ 3. `context.WithCancel()`: Creates a new Context derived from the provided parent Context with an associated cancellation function (CancelFunc). Calling this cancellation function signals that work with the context should be canceled. \
+ `ctx, cancel := context.WithCancel(parentContext)`
+ 
+ 4. `context.WithDeadline()` : Creates a new Context derived from the provided parent Context with an associated deadline. The context is canceled when the specified deadline is reached. \
+ `ctx, cancel := context.WithDeadline(parentContext, deadlineTime)`
+ 
+ 5. `context.WithTimeout()` : Similar to WithDeadline(), but the deadline is expressed as a duration from the current time. The context is canceled when the specified timeout duration elapses. \
+ `ctx, cancel := context.WithTimeout(parentContext, timeoutDuration)`
+
+ 6. `context.WithValue()` : Creates a new Context derived from the provided parent Context and associates a key-value pair with it. This allows you to carry data along with the context. \
+ `ctx := context.WithValue(parentContext, key, value)`
+ 
+- three functions: `WithCancel()`, `WithDeadline()`, and `WithTimeout()`. These functions create a new "child" context and return both the child context and a `CancelFunc()` function.
+
+```go
+	// Create a parent context
+	parentCtx := context.Background()
+
+	// Create a child context with cancellation function
+	childCtx, cancelFunc := context.WithCancel(parentCtx)
+```
+#### Using context as a key/value store
+`ctx := context.WithValue(context.Background(), myKey, "mySecret")`
+
+### The semaphore package
+- A semaphore is a construct that can limit or control the access to a shared resource.
+- A semaphore can limit the access of goroutines to a shared resource but originally, semaphores were used for limiting access to threads. Semaphores can have weights that limit the number of threads or goroutines that can have access to a resource.
+
+
+
+
+
+
+
